@@ -41,7 +41,7 @@ def updateTable(tableList, c):
             return ("+" + str(numberOne - numberTwo))
         elif int(numberOne) > int(numberTwo):
             return ("-" + str(numberTwo - numberOne))
-
+ 
     # Checks if code has been run before, if not, last_temperature is initialized at 50.
     if c == 0:
         last_temperature = 50
