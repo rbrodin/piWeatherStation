@@ -14,9 +14,9 @@ last_temperature = 30
 # Connects to mySQL database. I could've added arguments such as port, user, etc.
 def connectToSQL():
     db = MySQLdb.connect(host="localhost",    # Hostname, which is usually local host.
-                 user="robdhwiw_pi",         # The username in which you use to log into your database.
+                 user="USERNAME",         # The username in which you use to log into your database.
                  passwd="****",  # The password.
-                 db="robdhwiw_weatherData", # The name of the database you are reading/writing to.
+                 db="DATABASENAME", # The name of the database you are reading/writing to.
                  port=3306)        # The port you are connecting to. In my case, this is port 3309. 3306 is default, however Namecheap forced me to use an SSH tunnel with port 3309.
 
     return db
