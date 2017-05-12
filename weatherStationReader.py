@@ -1,4 +1,4 @@
-# Programmed by Robert B. Please do not use and claim it is your own. I spent many hours. 
+# Programmed by Robert B. Please do not use and claim it is your own. I spent many hours working on this.
 # However, feel free to use it to your advantage. I programmed this code to work with CPANEL and Namecheap.
 # Enjoy! I had a lot of fun working on this project and it is my pleasure. You can find the end result at: http://robdev.tech/weather
 
