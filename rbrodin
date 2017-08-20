@@ -1,15 +1,11 @@
-# Programmed by Robert B. Please do not use and claim it is your own. I spent many hours working on this.
-# However, feel free to use it to your advantage. I programmed this code to work with CPANEL and Namecheap.
+# Programmed by Robert/TastyBrownies.
+# Feel free to use it to your advantage. I programmed this code to work with any SSH tunnel and SQL database.
 # Enjoy! I had a lot of fun working on this project and it is my pleasure. You can find the end result at: http://robdev.tech/weather
 
 import MySQLdb
 import datetime
 import time
 from random import randint
-
-now = datetime.datetime.now()
-dayCheck = str(now.strftime("%B%d%Y"))
-last_temperature = 30
 
 # Connects to mySQL database. I could've added arguments such as port, user, etc.
 def connectToSQL():
@@ -20,6 +16,15 @@ def connectToSQL():
                  port=3306)        # The port you are connecting to. In my case, this is port 3309. 3306 is default, however Namecheap forced me to use an SSH tunnel with port 3309.
 
     return db
+
+# Used to get the difference in temperature between the the current reading and the past reading.
+def calculateDifference(numberOne, numberTwo):
+    if int(numberOne) < int(numberTwo):
+        return ("+" + str(numberTwo - numberOne))
+    elif int(numberOne) > int(numberTwo):
+        return ("-" + str(numberOne - numberTwo))
+    else:
+        return str(0)
 
 '''
 This function is used to update the table. There are two seperate tables, one for PHP to read the current data, and the other
@@ -32,41 +37,28 @@ add because of local and global variable issues.
 
 The function will write data to two tables.
 '''
-def updateTable(tableList, c):
+def updateTable(tableList, lT, cc):
     
-    # Function is used to calculate the difference between two numbers that are given. Specifically for the temperatures recorded.
-    # This function will return a string.
-    def calculateDifference(numberOne, numberTwo):
-        if int(numberOne) > int(numberTwo):
-            return ("+" + str(numberOne - numberTwo))
-        elif int(numberOne) > int(numberTwo):
-            return ("-" + str(numberTwo - numberOne))
- 
-    # Checks if code has been run before, if not, last_temperature is initialized at 50.
-    if c == 0:
-        last_temperature = 50
-        count = count + 1
-    else:   
-        last_temperature = last_temperature
     database = connectToSQL()
     cur = database.cursor()
-    
-    currentTemperature = randint(0, 100)
-    currentTime = 948 # Use datetime?
-    difference_from_last = calculateDifference(last_temperature, currentTemperature)
 
-    print currentTemperature, last_temperature
+    sense = SenseHat()
+    
+    currentTemperature = (sense.get_temperature() * 9/5) + 32
+    currentHumidity = sense.get_humidity()
+    currentPressure = sense.get_pressure() # * 0.014 - If you would like it in PSI, not Millibars. 
+    difference_from_last = calculateDifference(lT[0], currentTemperature)
 
     deleteFromCurrent = "DELETE FROM current_Weather LIMIT 1"
     cur.execute(deleteFromCurrent)
-    
-    valuesToInsertCurrent = "insert into %s VALUES(%d, %d, %s)" % (tableList[0], currentTemperature, currentTime, difference_from_last)
-    valuesToInsertLog = "insert into %s VALUES(%d, %d, %s)" % (tableList[1], currentTemperature, currentTime, difference_from_last)
 
-    last_temperature = currentTemperature
+    valuesToInsertCurrent = "insert into %s VALUES(%d, NOW(), %d, %d, %d, %s)" % (tableList[0], cc, currentTemperature, currentHumidity, currentPressure, difference_from_last)
+    valuesToInsertLog = "insert into %s VALUES(%d, NOW(), %d, %d, %d, %s)" % (tableList[1], cc, currentTemperature, currentHumidity, currentPressure, difference_from_last)
+    lT.remove(lT[0])
+    lT.append(currentTemperature)
     cur.execute(valuesToInsertCurrent)
     cur.execute(valuesToInsertLog)
-    
+
     database.close()
 
 # Function will create a new table. Is used to create a new table at the start of every day. The format is: 'MONTHDAY,YEAR', or 'May12,2017'
@@ -86,18 +78,23 @@ def createTable():
 
 # Function will run the script every minute to read and write new temperatures. Checks if there is a new day or not. If so, a new table is created.
 def runScript():
-    count = 0
+    currentDate = datetime.datetime.now()
+    counter = 0     
+    last_temperature = [0]
     while True:
-        if dayCheck != str(now.strftime("%B%d%Y")):
+        if currentDate().date() != datetime.datetime.now().date():
+            counter = 0
+            currentDate = datetime.datetime.now()            
             createTable()
-            # Need to add current temperature, time, for real. Maybe add barometric pressure?
-            updateTable(["current_Weather", str(now.strftime("%B%d%Y"))], count)
-            print "Added - Date is different!"
-            last_temperature = currentTemperature        
+            updateTable(["current_Weather", str(currentDate.strftime("%B%d%Y"))], last_temperature, counter)
+            counter = counter + 1
+            print "Added - Date is different! ID: " + str(counter) 
             time.sleep(60)        
         else:       
-            updateTable(["current_Weather", str(now.strftime("%B%d%Y"))], count)
-            print "Added - Date is the same!"
+            updateTable(["current_Weather", str(currentDate.strftime("%B%d%Y"))], last_temperature, counter)
+            print "Added - Date is the same! ID: " + str(counter) 
+            counter = counter + 1            
             time.sleep(60)
 
-runScript()
+#runScript()       
+createTable()
